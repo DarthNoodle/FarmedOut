@@ -18,15 +18,23 @@ namespace FarmLandSDK
         private const string ERC20_ABI = "[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"_from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"_to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"_owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"_spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"}]";
 
 
-        private const string ARRBITRUM_TESTNET_CORN = "0x86CdcfA5e6ac784776B54fb2e767BE1CAb3656b3";
-        private const string ARRBITRUM_TESTNET_LAND = "0x2E228ef2A59686cC5c6fF06cD46ee302a4134F00";
+        public const string ARRBITRUM_TESTNET_CORN = "0x86CdcfA5e6ac784776B54fb2e767BE1CAb3656b3";
+        public const string ARRBITRUM_TESTNET_LAND = "0x2E228ef2A59686cC5c6fF06cD46ee302a4134F00";
 
-        private const string ARRBITRUM_PROD_CORN = "0xFcc0351f3a1ff72409Df66a7589c1F9efBf53386";
-        private const string ARRBITRUM_PROD_LAND = "0x3CD1833Ce959E087D0eF0Cb45ed06BffE60F23Ba";
+        public const string ARRBITRUM_PROD_CORN = "0xFcc0351f3a1ff72409Df66a7589c1F9efBf53386";
+        public const string ARRBITRUM_PROD_LAND = "0x3CD1833Ce959E087D0eF0Cb45ed06BffE60F23Ba";
 
         private const string ARBITRUM_PROD_NETWORK = "https://arb1.arbitrum.io/rpc";
         private const string ARBITRUM_TEST_NETWORK = "https://rinkeby.arbitrum.io/rpc";
 
+        private static BigInteger END_MATURITY_BOOST = 179200;
+        private static BigInteger PERCENT_MULTIPLIER = 10000;
+        private static BigInteger MAX_GROWTH_CYCLE = 44800;
+        private static BigInteger MAX_GROWTH_CYCLE_WTH_FARMER = 89600;
+       // private static BigInteger PERCENT_MULTIPLIER = 10000;
+        private static BigInteger RATIO_MULTIPLIER = BigInteger.Pow(10, 10);
+        private static BigInteger MAX_COMPOST_BOOST = 100000;
+        private static BigInteger HARVEST_PER_BLOCK_DIVISOR = BigInteger.Pow(10, 10);
 
 
         //how many L1 ETH blocks in a day (13.5s block avg)
@@ -34,7 +42,7 @@ namespace FarmLandSDK
         private bool _isTestNet = false;
 
 
-        private Web3 _Web3 { get; set; }
+        public Web3 Web3 { get; private set; }
         private Account? _UserAccount { get; set; }
 
 
@@ -43,13 +51,13 @@ namespace FarmLandSDK
         public FarmManager(string web3URL, bool isTestNet = false)
         {
             _UserAccount = null;
-            _Web3 = new Web3(web3URL);
+            Web3 = new Web3(web3URL);
             _isTestNet = isTestNet;
         }//public FarmManager(string web3URL, bool isTestNet = false)
 
         public FarmManager(string web3URL, Account web3Account, bool isTestNet = false)
         {
-            _Web3 = new Web3(web3Account, web3URL);
+            Web3 = new Web3(web3Account, web3URL);
             _UserAccount = web3Account;
             _isTestNet = isTestNet;
         }//public FarmManager(string web3URL, Account web3Account, bool isTestNet = false)
@@ -57,7 +65,7 @@ namespace FarmLandSDK
         public FarmManager(string web3URL, string privateKey, bool isTestNet = false)
         {
             _UserAccount = new Account(privateKey);
-            _Web3 = new Web3(_UserAccount, web3URL);
+            Web3 = new Web3(_UserAccount, web3URL);
             _isTestNet = isTestNet;
         }//public FarmManager(string web3URL, string privateKey, bool isTestNet = false)
 
@@ -74,6 +82,17 @@ namespace FarmLandSDK
 
             return await CallFunction<OwnerOfFarmResult>(GetCornContractAddress(), CORN_ABI, "ownerOfFarm", contractParams).ConfigureAwait(false);
         }//public async Task<Farm> GetFarm(string address)
+
+
+        public async Task<FarmCollectibleTotalsFunctionResult> GetFarmCollectibleTotals(string address)
+        {
+            object[] contractParams = new object[] { address };
+
+            return await CallFunction<FarmCollectibleTotalsFunctionResult>(GetCornContractAddress(), CORN_ABI, "getFarmCollectibleTotals", contractParams).ConfigureAwait(false);
+        }
+
+
+
 
         /// <summary>
         /// Get CORN Balance
@@ -102,11 +121,16 @@ namespace FarmLandSDK
                  Owner = targetAddress
             };
 
-            var contractFunction = _Web3.Eth.GetContractQueryHandler<BalanceOfFunction>();
+            var contractFunction = Web3.Eth.GetContractQueryHandler<BalanceOfFunction>();
             
 
             return await contractFunction.QueryAsync<BigInteger>(contractAddress, contractParams).ConfigureAwait(false);
         }//private async Task<BigInteger> GetBalanceOfCoin(string contractAddress)
+
+        //  function getFarmCollectibleTotals ( address farmAddress ) external view returns ( uint256 totalMaxBoost, uint256 lastAddedBlockNumber );
+
+
+
 
 
 
@@ -121,7 +145,7 @@ namespace FarmLandSDK
         /// <returns></returns>
         private async Task<TReturn> CallFunction<TReturn>(string contractAddress, string abi, string functionName, object[]? functionParams = null) where TReturn : new()
         {
-            Contract? contract = _Web3.Eth.GetContract(abi, contractAddress);
+            Contract? contract = Web3.Eth.GetContract(abi, contractAddress);
             Function? contractFunction = contract.GetFunction(functionName);
 
             TReturn? returnValue;
@@ -148,6 +172,79 @@ namespace FarmLandSDK
         /// </summary>
         /// <returns></returns>
         private string GetLandContractAddress() => _isTestNet ? ARRBITRUM_TESTNET_LAND : ARRBITRUM_PROD_LAND;
+
+
+        public async Task<BigInteger> GetFarmMaturityBoost(string farmAddress,BigInteger currentBlockNo, BigInteger farmBlockNumber)
+        {
+            var results = await GetFarmCollectibleTotals(farmAddress).ConfigureAwait(false);
+
+            BigInteger totalMaxBoost = results.TotalMaxBoost;
+
+            BigInteger boostExtension = BigInteger.Subtract(totalMaxBoost, PERCENT_MULTIPLIER);
+            BigInteger blockDiff = BigInteger.Add(BigInteger.Divide(BigInteger.Multiply(BigInteger.Subtract(currentBlockNo, farmBlockNumber), boostExtension), END_MATURITY_BOOST), PERCENT_MULTIPLIER);
+
+            return BigInteger.Min(totalMaxBoost, blockDiff);
+        }
+
+
+        public async Task<BigInteger> GetHarvestAmount(string farmAddress, BigInteger targetBlock, bool hasFarmer)
+        {
+            var farm = await GetFarm(farmAddress).ConfigureAwait(false);
+
+
+            BigInteger farnAmount = farm.Amount;
+
+            BigInteger lastBlockInGrowthCycle = 0;
+            BigInteger blocksMinted = 0; //todo: check for without f
+
+
+            if (hasFarmer) { 
+                blocksMinted = MAX_GROWTH_CYCLE_WTH_FARMER;
+                lastBlockInGrowthCycle = BigInteger.Add(farm.LastHarvestedBlockNumber, MAX_GROWTH_CYCLE_WTH_FARMER);
+            }
+            else { 
+                blocksMinted = MAX_GROWTH_CYCLE;
+                BigInteger.Add(farm.LastHarvestedBlockNumber, MAX_GROWTH_CYCLE);
+            }
+
+            if(targetBlock < lastBlockInGrowthCycle)
+            {
+                blocksMinted = BigInteger.Subtract(targetBlock, farm.LastHarvestedBlockNumber);
+            }
+
+            BigInteger cornBeforeBoost = BigInteger.Multiply(farnAmount, blocksMinted);
+
+            var latestBlockNumber = await Web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+
+            BigInteger compostBoost = CalculateCompostBonus(, farm.Amount, farm.CompostedAmount);
+            BigInteger maturityBoost = await GetFarmMaturityBoost(farmAddress, latestBlockNumber, farm.BlockNumber).ConfigureAwait(false);
+
+            BigInteger totalBoosts = await GetTotalBoosts(farmAddress, maturityBoost, compostBoost).ConfigureAwait(false);
+
+            return BigInteger.Divide(BigInteger.Divide(BigInteger.Multiply(cornBeforeBoost, totalBoosts), PERCENT_MULTIPLIER), HARVEST_PER_BLOCK_DIVISOR);
+        }
+
+
+        public async Task<BigInteger> GetTotalBoosts(string farmAddress, BigInteger maturityBoost, BigInteger compostBoost)
+        {
+            //uint256 _maturityBoost = getFarmMaturityBoost(farmAddress);                             // Get the farms Maturity Boost
+            //uint256 _compostBoost = getFarmCompostBoost(farmAddress);                               // Get the farms Compost Boost        
+            //totalBoost = _compostBoost.mul(_maturityBoost).div(PERCENT_MULTIPLIER);                 // Maturity & Collectible boosts are combined & multiplied by the 
+
+            
+
+            return BigInteger.Divide(PERCENT_MULTIPLIER, BigInteger.Multiply(maturityBoost, compostBoost));
+        }
+
+        public BigInteger CalculateCompostBonus(BigInteger globalRatio, BigInteger landAmount,BigInteger composted)
+        {
+            if(landAmount == 0) { return 0; }
+            BigInteger ratio = BigInteger.Divide(BigInteger.Multiply(RATIO_MULTIPLIER, composted), landAmount);
+
+            return BigInteger.Min(MAX_COMPOST_BOOST, BigInteger.Add(PERCENT_MULTIPLIER, BigInteger.Divide(BigInteger.Multiply(PERCENT_MULTIPLIER, ratio), globalRatio)));
+        }
+
+      
     }//end of class
 }
 
